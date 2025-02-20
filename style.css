@@ -102,3 +102,9 @@ input[type="submit"]:hover {
     font-family: "Arial", sans-serif;
     font-weight: bold;
 }
+
+#map {
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    margin: 20px auto;
+}

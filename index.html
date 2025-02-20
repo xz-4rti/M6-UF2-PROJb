@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 
 <body>
@@ -28,11 +30,13 @@
                 <option value="" disabled selected>Selecciona una opción</option>
             </select>
         </label><br><br>
-        
+        <!-- Mapa para selecionar el sito donde quieres ver photos de -->
+        <div id="map" style="height: 400px; width: 80%; margin: 20px auto;"></div>
         <input type="submit" value="ENVIAR" id="submit">
     </form>
     <div id="image-container"></div>
 </body>
 <script src="route.js"></script>
-
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </html>

@@ -4,6 +4,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const poblacionSelect = document.getElementById('poblacion');
     const imageContainer = document.getElementById('image-container');
     const submitButton = document.getElementById('submit');
+    // TASCA 2 - Localització de l'usuari con geolocalització
+    const locatebutton = document.createElement('button');
+    locatebutton.innerHTML = "Localitzar";
+    locatebutton.id = "locate-me";
+    document.body.appendChild(locatebutton);
+    // TASCA 3 - Mapa
+    const mapElement = document.getElementById('map');
 
     // Cargar Comunitats Autònomes
     async function fetchComunidad() {
@@ -106,11 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // TASCA 2 - Localització de l'usuari con geolocalització
-    
-    const locatebutton = document.createElement('button');
-    locatebutton.innerHTML = "Localitzar";
-    locatebutton.id = "locate-me";
-    document.body.appendChild(locatebutton);
 
     locatebutton.addEventListener('click', function () {
         if ("geolocation" in navigator) {
@@ -122,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 let response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                 let data = await response.json();
                 let ciutat = data.address.city || data.address.town || data.address.village;
-                
+
                 if (ciutat) {
                     alert(`S'ha detectat la teva ubicació: ${ciutat}. Buscant imatges...`);
                     let images = await fetchImagen(ciutat);
@@ -154,5 +156,81 @@ document.addEventListener('DOMContentLoaded', function () {
             alert("El teu navegador no suporta geolocalització.");
         }
     });
+
+    // TASCA 2 - MAPA
+    let map;
+    let marker;
+
+    // Initialize the Leaflet map
+    function initMap() {
+        map = L.map('map').setView([40.4168, -3.7038], 6); // Center on Spain
+
+        // Add OpenStreetMap tiles (default map)
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        // Add Esri World Imagery (satellite layer)
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        });
+
+        // Add a base layers control
+        const baseLayers = {
+            "OpenStreetMap": osmLayer,
+            "Satellite": satelliteLayer
+        };
+
+        // Add the default layer (OpenStreetMap) to the map
+        osmLayer.addTo(map);
+
+        // Add layer control to switch between maps
+        L.control.layers(baseLayers).addTo(map);
+
+        // Add a click event listener to the map
+        map.on('click', async function (event) {
+            const lat = event.latlng.lat;
+            const lng = event.latlng.lng;
+
+            // Reverse geocode to get the location name using Nominatim
+            let response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            let data = await response.json();
+            let locationName = data.display_name;
+
+            if (locationName) {
+                alert(`Has seleccionat: ${locationName}. Buscant imatges...`);
+                let images = await fetchImagen(locationName);
+                imageContainer.innerHTML = ''; // Clear previous images
+
+                if (Object.keys(images).length > 0) {
+                    Object.values(images).forEach(image => {
+                        if (image.imageinfo) {
+                            const imageUrl = image.imageinfo[0].url;
+                            const imageBox = document.createElement('div');
+                            imageBox.className = 'image-box';
+                            const imgElement = document.createElement('img');
+                            imgElement.src = imageUrl;
+                            imageBox.appendChild(imgElement);
+                            imageContainer.appendChild(imageBox);
+                        }
+                    });
+                } else {
+                    imageContainer.innerHTML = '<p>No s\'han trobat imatges per a aquesta ubicació.</p>';
+                }
+            } else {
+                alert("No s'ha pogut trobar el nom de la ubicació.");
+            }
+
+            // Place a marker on the clicked location
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng]).addTo(map);
+            }
+        });
+    }
+
+    // Initialize the map when the DOM is fully loaded
+    initMap();
 
 });
