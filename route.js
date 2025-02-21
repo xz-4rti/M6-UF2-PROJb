@@ -4,13 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const poblacionSelect = document.getElementById('poblacion');
     const imageContainer = document.getElementById('image-container');
     const submitButton = document.getElementById('submit');
-    // TASCA 2 - Localització de l'usuari con geolocalització
-    const locatebutton = document.createElement('button');
-    locatebutton.innerHTML = "Localitzar";
-    locatebutton.id = "locate-me";
-    document.body.appendChild(locatebutton);
-    // TASCA 3 - Mapa
-    const mapElement = document.getElementById('map');
 
     // Cargar Comunitats Autònomes
     async function fetchComunidad() {
@@ -112,8 +105,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // TASCA 2 - Localització de l'usuari con geolocalització
+    // Function to show the modal with a message
+    function showModal(message) {
+        modal.style.display = 'block';
+        modalMessage.textContent = message;
+    }
 
+    // Function to hide the modal
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+
+    // TASCA 2 - Localització de l'usuari con geolocalització
+    const locatebutton = document.createElement('button');
+    locatebutton.innerHTML = "📍 Localizarme";
+    locatebutton.id = "locate-me";
+    document.body.appendChild(locatebutton);
+    
     locatebutton.addEventListener('click', function () {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(async function (position) {
@@ -147,13 +156,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                 } else {
-                    alert("No s'ha pogut trobar la teva ciutat. Prova a seleccionar-la manualment.");
+                    showModal("No s'ha pogut trobar la teva ciutat. Prova a seleccionar-la manualment.");
                 }
             }, function (error) {
-                alert("No s'ha pogut obtenir la teva ubicació.");
+                showModal("No s'ha pogut obtenir la teva ubicació.");
             });
         } else {
-            alert("El teu navegador no suporta geolocalització.");
+            showModal("El teu navegador no suporta geolocalització.");
         }
     });
 
@@ -161,74 +170,99 @@ document.addEventListener('DOMContentLoaded', function () {
     let map;
     let marker;
 
+    async function fetchImagen2(city) {
+        let urlImagen = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=file:${encodeURIComponent(city)}&gsrlimit=5&prop=imageinfo&iiprop=url`;
+        
+        try {
+            let response = await fetch(urlImagen);
+            let data = await response.json();
+    
+            // Ensure that the response contains images
+            if (data.query?.pages) {
+                return Object.values(data.query.pages);
+            } else {
+                return [];
+            }
+        } catch (error) {
+            console.error("Error fetching images:", error);
+            return [];
+        }
+    }
+     
+
     // Initialize the Leaflet map
     function initMap() {
         map = L.map('map').setView([40.4168, -3.7038], 6); // Center on Spain
-
-        // Add OpenStreetMap tiles (default map)
+    
+        // OpenStreetMap tiles
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         });
-
-        // Add Esri World Imagery (satellite layer)
+    
+        // Esri Satellite Layer
         const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
         });
-
-        // Add a base layers control
+    
+        // Base layers control
         const baseLayers = {
             "OpenStreetMap": osmLayer,
             "Satellite": satelliteLayer
         };
-
-        // Add the default layer (OpenStreetMap) to the map
+    
+        // Default layer
         osmLayer.addTo(map);
-
-        // Add layer control to switch between maps
         L.control.layers(baseLayers).addTo(map);
-
-        // Add a click event listener to the map
+    
+        // Click event for map
         map.on('click', async function (event) {
             const lat = event.latlng.lat;
             const lng = event.latlng.lng;
-
-            // Reverse geocode to get the location name using Nominatim
-            let response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            let data = await response.json();
-            let locationName = data.display_name;
-
-            if (locationName) {
-                alert(`Has seleccionat: ${locationName}. Buscant imatges...`);
-                let images = await fetchImagen(locationName);
-                imageContainer.innerHTML = ''; // Clear previous images
-
-                if (Object.keys(images).length > 0) {
-                    Object.values(images).forEach(image => {
-                        if (image.imageinfo) {
-                            const imageUrl = image.imageinfo[0].url;
-                            const imageBox = document.createElement('div');
-                            imageBox.className = 'image-box';
-                            const imgElement = document.createElement('img');
-                            imgElement.src = imageUrl;
-                            imageBox.appendChild(imgElement);
-                            imageContainer.appendChild(imageBox);
-                        }
-                    });
+    
+            try {
+                // Reverse geocode to get the city name
+                let response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                let data = await response.json();
+                let city = data.address.city || data.address.town || data.address.village;
+    
+                if (city) {
+                    alert(`Has seleccionado la población: ${city}. Buscando imágenes...`);
+                    let images = await fetchImagen2(city);
+                    
+                    // Clear previous images
+                    imageContainer.innerHTML = '';
+    
+                    if (Object.keys(images).length > 0) {
+                        Object.values(images).forEach(image => {
+                            if (image.imageinfo) {
+                                const imageUrl = image.imageinfo[0].url;
+                                const imageBox = document.createElement('div');
+                                imageBox.className = 'image-box';
+                                const imgElement = document.createElement('img');
+                                imgElement.src = imageUrl;
+                                imageBox.appendChild(imgElement);
+                                imageContainer.appendChild(imageBox);
+                            }
+                        });
+                    } else {
+                        imageContainer.innerHTML = '<p>No s\'han trobat imatges per a aquesta població.</p>';
+                    }
                 } else {
-                    imageContainer.innerHTML = '<p>No s\'han trobat imatges per a aquesta ubicació.</p>';
+                    alert("No se ha podido encontrar la población.");
                 }
-            } else {
-                alert("No s'ha pogut trobar el nom de la ubicació.");
-            }
-
-            // Place a marker on the clicked location
-            if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else {
-                marker = L.marker([lat, lng]).addTo(map);
+    
+                // Place a marker on the clicked location
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng]).addTo(map);
+                }
+            } catch (error) {
+                console.error("Error fetching location:", error);
             }
         });
-    }
+    }    
+    
 
     // Initialize the map when the DOM is fully loaded
     initMap();

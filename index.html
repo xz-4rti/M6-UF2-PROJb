@@ -12,7 +12,7 @@
 
 <body>
     <h1>Descubre España</h1>
-    <form action="">
+    <form action="" id="form">
         <label>Comunitat: 
             <select name="ccaa" id="ccaa" title="ccaa">
                 <option value="" disabled selected>Selecciona una opción</option>
@@ -31,10 +31,12 @@
             </select>
         </label><br><br>
         <!-- Mapa para selecionar el sito donde quieres ver photos de -->
-        <div id="map" style="height: 400px; width: 80%; margin: 20px auto;"></div>
+         <p>📍 Haz click en la mapa para ver el imagen de la poblacion selecionado 📍</p>
+        <div id="map" style="height: 400px; width: 90%; margin: 20px auto;"></div>
         <input type="submit" value="ENVIAR" id="submit">
     </form>
     <div id="image-container"></div>
+    <p>📍 Haz click a localizarme para ver imagenes de tu poblacion 📍</p>
 </body>
 <script src="route.js"></script>
 <!-- Leaflet JS -->
